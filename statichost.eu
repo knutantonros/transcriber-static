@@ -1,0 +1,18 @@
+# Configuration file for statichost.eu
+# See https://www.statichost.eu/docs/ for more information
+
+[site]
+title = "Ljudtranskribering & Sammanfattning"
+description = "En webbapp för att transkribera och sammanfatta ljud- eller videofiler på svenska."
+
+[build]
+# This is a static site, no build commands needed
+
+[deploy]
+# Default folder to deploy from
+dir = "."
+
+[headers]
+# Enable cross-origin isolation for SharedArrayBuffer support
+"Cross-Origin-Opener-Policy" = "same-origin"
+"Cross-Origin-Embedder-Policy" = "require-corp"
