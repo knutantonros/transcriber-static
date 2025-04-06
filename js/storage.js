@@ -273,4 +273,79 @@ class AppStorage {
 
     /**
      * Delete audio file and its transcription
-     * @param {string
+     * @param {string} id - Audio file ID
+     * @returns {Promise<boolean>} - Success status
+     */
+    async deleteAudioFile(id) {
+        if (!this.db) await this.initDB();
+
+        // Delete transcription first
+        await this.deleteTranscriptionsByAudioId(id);
+
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['audioFiles'], 'readwrite');
+            const store = transaction.objectStore('audioFiles');
+            const request = store.delete(id);
+            
+            request.onsuccess = () => {
+                // Update recent files list
+                this.removeFromRecentFiles(id);
+                resolve(true);
+            };
+            
+            request.onerror = (event) => {
+                console.error('Error deleting audio file:', event.target.error);
+                reject(event.target.error);
+            };
+        });
+    }
+
+    /**
+     * Delete transcriptions by audio ID
+     * @param {string} audioId - Audio file ID
+     * @returns {Promise<boolean>} - Success status
+     */
+    async deleteTranscriptionsByAudioId(audioId) {
+        if (!this.db) await this.initDB();
+
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['transcriptions'], 'readwrite');
+            const store = transaction.objectStore('transcriptions');
+            const index = store.index('audioId');
+            const request = index.openCursor(IDBKeyRange.only(audioId));
+            
+            request.onsuccess = (event) => {
+                const cursor = event.target.result;
+                if (cursor) {
+                    cursor.delete();
+                    cursor.continue();
+                } else {
+                    resolve(true);
+                }
+            };
+            
+            request.onerror = (event) => {
+                console.error('Error deleting transcriptions:', event.target.error);
+                reject(event.target.error);
+            };
+        });
+    }
+
+    /**
+     * Remove file from recent files list
+     * @param {string} id - File ID
+     */
+    removeFromRecentFiles(id) {
+        let recentFiles = JSON.parse(localStorage.getItem(CONFIG.storage.recentFiles) || '[]');
+        recentFiles = recentFiles.filter(file => file.id !== id);
+        localStorage.setItem(CONFIG.storage.recentFiles, JSON.stringify(recentFiles));
+    }
+
+    /**
+     * Get list of recent files
+     * @returns {Array} - Recent files list
+     */
+    getRecentFiles() {
+        return JSON.parse(localStorage.getItem(CONFIG.storage.recentFiles) || '[]');
+    }
+}
