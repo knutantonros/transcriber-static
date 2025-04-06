@@ -1,4 +1,5 @@
 # Configuration file for statichost.eu
+# See https://www.statichost.eu/docs/ for more information
 
 [site]
 title = "Ljudtranskribering & Sammanfattning"
@@ -18,7 +19,7 @@ dir = "."
 
 # Set appropriate MIME types for files
 "/*.js" = { "Content-Type" = "application/javascript" }
-"/js/*" = { "Content-Type" = "application/javascript" }
+"/js/*.js" = { "Content-Type" = "application/javascript" }
 "/*.css" = { "Content-Type" = "text/css" }
-"/css/*" = { "Content-Type" = "text/css" }
+"/css/*.css" = { "Content-Type" = "text/css" }
 "/*.html" = { "Content-Type" = "text/html; charset=utf-8" }
