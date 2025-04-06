@@ -32,7 +32,7 @@ class TranscriptionService {
                 'whisper-large': 'KBLab/kb-whisper-large'
             };
 
-            const modelId = modelMap[modelName] || 'Xenova/whisper-small';
+            const modelId = modelMap[modelName] || 'KBLab/kb-whisper-small';
 
             // Configure pipeline
             // Create a new abort controller that can be used to cancel the loading
