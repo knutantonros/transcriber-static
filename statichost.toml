@@ -16,6 +16,9 @@ dir = "."
 "Cross-Origin-Opener-Policy" = "same-origin"
 "Cross-Origin-Embedder-Policy" = "require-corp"
 
-# Additional headers for CSS and JS files
-"*.css" = { "Content-Type" = "text/css" }
-"*.js" = { "Content-Type" = "application/javascript" }
+# Set appropriate MIME types for files
+"/*.js" = { "Content-Type" = "application/javascript" }
+"/js/*" = { "Content-Type" = "application/javascript" }
+"/*.css" = { "Content-Type" = "text/css" }
+"/css/*" = { "Content-Type" = "text/css" }
+"/*.html" = { "Content-Type" = "text/html; charset=utf-8" }
