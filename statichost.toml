@@ -1,25 +1,12 @@
 # Configuration file for statichost.eu
-# See https://www.statichost.eu/docs/ for more information
-
 [site]
 title = "Ljudtranskribering & Sammanfattning"
 description = "En webbapp för att transkribera och sammanfatta ljud- eller videofiler på svenska."
 
-[build]
-# This is a static site, no build commands needed
-
-[deploy]
-# Default folder to deploy from
-dir = "."
-
 [headers]
-# Enable cross-origin isolation for SharedArrayBuffer support
-"Cross-Origin-Opener-Policy" = "same-origin"
-"Cross-Origin-Embedder-Policy" = "require-corp"
+# Required for SharedArrayBuffer (needed by transformers.js)
+"/*" = { "Cross-Origin-Embedder-Policy" = "require-corp", "Cross-Origin-Opener-Policy" = "same-origin" }
 
-# Set appropriate MIME types for files
-"/*.js" = { "Content-Type" = "application/javascript" }
+# Correct MIME types
 "/js/*.js" = { "Content-Type" = "application/javascript" }
-"/*.css" = { "Content-Type" = "text/css" }
 "/css/*.css" = { "Content-Type" = "text/css" }
-"/*.html" = { "Content-Type" = "text/html; charset=utf-8" }
