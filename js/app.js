@@ -155,12 +155,28 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Check if model is already loaded
             if (!transcriptionService.isModelLoaded(settings.model)) {
-                const modelLoaded = await transcriptionService.loadModel(settings.model, (progress) => {
-                    ui.updateProgress(progress);
-                });
-                
-                if (!modelLoaded) {
-                    throw new Error('Kunde inte ladda transkriptionsmodell.');
+                try {
+                    ui.updateProcessingInfo('Laddar modell... Detta kan ta en stund första gången.');
+                    
+                    const modelLoaded = await transcriptionService.loadModel(settings.model, (progress) => {
+                        ui.updateProgress(progress);
+                    });
+                    
+                    if (!modelLoaded) {
+                        throw new Error('Kunde inte ladda modellen. Försöker med en mindre modell...');
+                    }
+                } catch (error) {
+                    console.error('Error loading primary model:', error);
+                    
+                    // Try with tiny model as fallback
+                    ui.updateProcessingInfo('Försöker med en mindre modell...');
+                    const fallbackLoaded = await transcriptionService.loadModel('whisper-tiny', (progress) => {
+                        ui.updateProgress(progress);
+                    });
+                    
+                    if (!fallbackLoaded) {
+                        throw new Error('Kunde inte ladda någon transkriptionsmodell. Kontrollera din internetanslutning och försök igen.');
+                    }
                 }
             }
             
@@ -168,13 +184,40 @@ document.addEventListener('DOMContentLoaded', () => {
             ui.showProcessing('Transkriberar ljud...');
             ui.updateProcessingInfo('Bearbetar ljud. Detta kan ta några minuter beroende på längden.');
             
-            const transcription = await transcriptionService.transcribe(
-                audioData.blob,
-                settings.language,
-                (progress) => {
-                    ui.updateProgress(progress);
+            let transcription;
+            
+            try {
+                transcription = await transcriptionService.transcribe(
+                    audioData.blob,
+                    settings.language,
+                    (progress) => {
+                        ui.updateProgress(progress);
+                    }
+                );
+            } catch (error) {
+                console.error('Error in transcription:', error);
+                
+                if (error.message.includes('WhisperFeatureExtractor expects input')) {
+                    ui.updateProcessingInfo('Problem med ljudformatet. Försöker med en alternativ metod...');
+                    
+                    // Try using URL instead of blob as alternative approach
+                    try {
+                        transcription = await transcriptionService.transcribe(
+                            audioData.url,
+                            settings.language,
+                            (progress) => {
+                                ui.updateProgress(progress);
+                            }
+                        );
+                    } catch (fallbackError) {
+                        throw new Error('Kunde inte bearbeta ljudfilen: ' + fallbackError.message);
+                    }
+                } else if (error.message.includes('SharedArrayBuffer')) {
+                    throw new Error('Din webbläsare stöder inte SharedArrayBuffer som krävs för transkription. Försök med Chrome eller Edge.');
+                } else {
+                    throw error; // Re-throw other errors
                 }
-            );
+            }
             
             // Summarize text if API key is available
             let summary = null;
@@ -182,13 +225,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 ui.showProcessing('Skapar sammanfattning...');
                 ui.updateProgress(0.5);
                 
-                summary = await summarizationService.summarizeWithOpenAI(
-                    transcription,
-                    settings.summaryLength,
-                    settings.language
-                );
-                
-                ui.updateProgress(1.0);
+                try {
+                    summary = await summarizationService.summarizeWithOpenAI(
+                        transcription,
+                        settings.summaryLength,
+                        settings.language
+                    );
+                    
+                    ui.updateProgress(1.0);
+                } catch (summaryError) {
+                    console.error('Error in summarization:', summaryError);
+                    summary = `Kunde inte skapa sammanfattning: ${summaryError.message}. Vänligen kontrollera din API-nyckel.`;
+                }
             }
             
             // Save results
