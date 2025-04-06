@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ljudtranskribering & Sammanfattning</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Ljudtranskribering & Sammanfattning</h1>
+            <p>Ladda upp ljudfiler och få transkription + sammanfattning</p>
+        </header>
+
+        <div class="settings-panel">
+            <div class="settings-header">
+                <h2>Inställningar</h2>
+                <button id="toggle-settings" class="btn-icon">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+            
+            <div class="settings-content">
+                <div class="setting-group">
+                    <label for="api-key">OpenAI API-nyckel för sammanfattning</label>
+                    <input type="password" id="api-key" placeholder="sk-...">
+                    <p class="hint">Krävs för sammanfattningsfunktionen. Sparas endast i din webbläsare.</p>
+                </div>
+                
+                <div class="setting-group">
+                    <label for="model-select">Välj transkriptionsmodell</label>
+                    <select id="model-select">
+                        <option value="whisper-tiny">KB Whisper Tiny (snabb)</option>
+                        <option value="whisper-base">KB Whisper Base</option>
+                        <option value="whisper-small" selected>KB Whisper Small</option>
+                        <option value="whisper-medium">KB Whisper Medium</option>
+                        <option value="whisper-large">KB Whisper Large (noggrann)</option>
+                    </select>
+                </div>
+                
+                <div class="setting-group">
+                    <label for="summary-length">Sammanfattningslängd</label>
+                    <div class="range-with-labels">
+                        <span>Mycket kort</span>
+                        <input type="range" id="summary-length" min="1" max="5" value="3">
+                        <span>Mycket lång</span>
+                    </div>
+                </div>
+                
+                <div class="setting-group">
+                    <label for="language-select">Språk</label>
+                    <select id="language-select">
+                        <option value="sv" selected>Svenska</option>
+                        <option value="en">Engelska</option>
+                        <option value="auto">Automatisk igenkänning</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="upload">Ladda upp fil</button>
+            <button class="tab-btn" data-tab="record">Spela in ljud</button>
+        </div>
+
+        <div class="tab-content">
+            <!-- Upload Tab -->
+            <div id="upload" class="tab-pane active">
+                <div class="upload-area" id="drop-area">
+                    <input type="file" id="file-input" accept="audio/*,video/*" hidden>
+                    <div class="upload-message">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Dra och släpp din ljud- eller videofil här</p>
+                        <p>eller</p>
+                        <button id="select-file-btn" class="btn primary">Välj fil</button>
+                    </div>
+                    <div class="file-info" style="display: none;">
+                        <p id="filename"></p>
+                        <button id="process-file-btn" class="btn primary">Transkribera och sammanfatta</button>
+                        <button id="remove-file-btn" class="btn secondary">Ta bort</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Record Tab -->
+            <div id="record" class="tab-pane">
+                <div class="record-controls">
+                    <button id="start-record-btn" class="btn primary record-btn">
+                        <i class="fas fa-microphone"></i> Starta inspelning
+                    </button>
+                    <button id="stop-record-btn" class="btn secondary record-btn" style="display: none;">
+                        <i class="fas fa-stop"></i> Stoppa inspelning
+                    </button>
+                    
+                    <div id="recording-indicator" style="display: none;">
+                        <span class="recording-dot"></span>
+                        <span id="recording-time">00:00</span>
+                    </div>
+                    
+                    <div id="audio-player-container" style="display: none;">
+                        <audio id="audio-player" controls></audio>
+                        <button id="process-recording-btn" class="btn primary">Transkribera och sammanfatta</button>
+                        <button id="discard-recording-btn" class="btn secondary">Ta bort</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="processing-section" style="display: none;">
+            <div class="progress-container">
+                <h3 id="processing-stage">Bearbetar ljud...</h3>
+                <div class="progress-bar">
+                    <div id="progress-fill" class="progress-fill"></div>
+                </div>
+                <p id="processing-info">Detta kan ta några minuter beroende på filens längd och vald modell.</p>
+            </div>
+        </div>
+
+        <div id="results-section" style="display: none;">
+            <div class="results-tabs">
+                <button class="results-tab-btn active" data-result="transcription">Transkribering</button>
+                <button class="results-tab-btn" data-result="summary">Sammanfattning</button>
+            </div>
+            
+            <div class="results-content">
+                <div id="transcription-result" class="result-pane active">
+                    <div class="result-actions">
+                        <button id="copy-transcription" class="btn-icon"><i class="fas fa-copy"></i></button>
+                        <button id="download-transcription-txt" class="btn-icon"><i class="fas fa-file-alt"></i></button>
+                        <button id="download-transcription-docx" class="btn-icon"><i class="fas fa-file-word"></i></button>
+                    </div>
+                    <div id="transcription-text" class="result-text"></div>
+                </div>
+                
+                <div id="summary-result" class="result-pane">
+                    <div class="result-actions">
+                        <button id="copy-summary" class="btn-icon"><i class="fas fa-copy"></i></button>
+                        <button id="download-summary-txt" class="btn-icon"><i class="fas fa-file-alt"></i></button>
+                    </div>
+                    <div id="summary-text" class="result-text"></div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Version: 1.0.0 | © 2024</p>
+        </footer>
+    </div>
+
+    <!-- Load scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.1.0/docx.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.5.0"></script>
+    <script src="js/config.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/audio-processor.js"></script>
+    <script src="js/transcription.js"></script>
+    <script src="js/summarization.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
